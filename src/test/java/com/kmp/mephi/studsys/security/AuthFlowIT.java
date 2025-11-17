@@ -25,16 +25,8 @@ class AuthFlowIT {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    /**
-     * Полный REST-флоу:
-     *  - /api/courses без токена -> 401
-     *  - /api/auth/register -> создаём пользователя, получаем JWT
-     *  - /api/auth/login -> логинимся теми же данными, получаем accessToken
-     *  - /api/courses c Bearer токеном -> 200 и пустой список
-     */
     @Test
     void register_login_then_access_protected() throws Exception {
-        // 1. Без токена доступ к /api/courses запрещён
         mvc.perform(get("/api/courses"))
                 .andExpect(status().isUnauthorized());
 

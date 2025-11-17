@@ -31,15 +31,9 @@ class CoreCrudIT {
     @Autowired QuestionRepository questionRepo;
     @Autowired EntityManager em;
 
-    /**
-     * 1) Схема поднялась
-     * 2) Базовый CRUD по User/Course/Module/Lesson/Assignment/Submission работает
-     *    и связи реально сохраняются в БД (проверяем после flush/clear).
-     */
     @Test
     @Transactional
     void schema_is_applied_and_basic_crud_works() {
-        // Category
         Category category = categoryRepo.save(
                 Category.builder()
                         .name("Programming-" + UUID.randomUUID())
@@ -47,7 +41,6 @@ class CoreCrudIT {
         );
         assertThat(category.getId()).isNotNull();
 
-        // Teacher & Student
         User teacher = userRepo.save(User.builder()
                 .name("Teacher")
                 .email("teacher_" + UUID.randomUUID() + "@example.com")
@@ -62,7 +55,6 @@ class CoreCrudIT {
                 .role(Role.STUDENT)
                 .build());
 
-        // Course
         Course course = courseRepo.save(Course.builder()
                 .title("Hibernate 101 " + UUID.randomUUID())
                 .description("Intro to Hibernate")
@@ -70,7 +62,6 @@ class CoreCrudIT {
                 .teacher(teacher)
                 .build());
 
-        // Module + Lesson
         ModuleEntity module = moduleRepo.save(ModuleEntity.builder()
                 .course(course)
                 .title("Module 1")
@@ -83,7 +74,6 @@ class CoreCrudIT {
                 .content("content")
                 .build());
 
-        // Assignment + Submission
         Assignment assignment = assignmentRepo.save(Assignment.builder()
                 .lesson(lesson)
                 .title("HW1")
@@ -98,7 +88,6 @@ class CoreCrudIT {
                 .score(95)
                 .build());
 
-        // Фиксируем всё в БД и очищаем контекст, чтобы читать "как с нуля"
         em.flush();
         em.clear();
 
@@ -117,9 +106,6 @@ class CoreCrudIT {
         assertThat(reloadedSubmission.getStudent().getId()).isEqualTo(student.getId());
     }
 
-    /**
-     * 2) Enrollment уникален по (user, course).
-     */
     @Test
     void enrollment_unique_constraint_works() {
         User student = userRepo.save(User.builder()
@@ -162,9 +148,6 @@ class CoreCrudIT {
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
-    /**
-     * 3) Submission уникален по (assignment, student).
-     */
     @Test
     void submission_unique_per_assignment_and_student() {
         User student = userRepo.save(User.builder()
@@ -228,10 +211,6 @@ class CoreCrudIT {
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
-    /**
-     * 4) Классический тест: вне транзакции обращение к lazy-коллекции даёт LazyInitializationException.
-     * Это ровно то, что от тебя хотят по ТЗ — демонстрация проблемы lazy loading.
-     */
     @Test
     void lazy_loading_throws_outside_transaction() {
         Category category = categoryRepo.save(Category.builder()
@@ -257,18 +236,12 @@ class CoreCrudIT {
                 .orderIndex(1)
                 .build());
 
-        // ВАЖНО:
-        // findById сам откроет транзакцию и вернёт уже detached-объект.
         Course detached = courseRepo.findById(course.getId()).orElseThrow();
 
         assertThatThrownBy(() -> detached.getModules().size())
                 .isInstanceOf(LazyInitializationException.class);
     }
 
-    /**
-     * 5) Внутри транзакции ленивый доступ к коллекции НЕ падает.
-     * Количество модулей проверяем через отдельный запрос, чтобы не зависеть от состояния инверсной коллекции.
-     */
     @Test
     @Transactional
     void lazy_loading_inside_transaction_is_ok() {
@@ -301,7 +274,6 @@ class CoreCrudIT {
                 .orderIndex(2)
                 .build());
 
-        // Количество модулей по курсу — через JPQL
         Long count = em.createQuery(
                         "select count(m) from ModuleEntity m where m.course.id = :cid",
                         Long.class)
@@ -310,16 +282,11 @@ class CoreCrudIT {
 
         assertThat(count).isEqualTo(2L);
 
-        // И главное — ленивый доступ ВНУТРИ транзакции не кидает LazyInitializationException
         Course managed = courseRepo.findById(course.getId()).orElseThrow();
         assertThatCode(() -> managed.getModules().size())
                 .doesNotThrowAnyException();
     }
 
-    /**
-     * 6) Структура Quiz -> Question -> QuizSubmission сохраняется и читается.
-     * Проверяем количество через JPQL и то, что ленивые коллекции читаются внутри транзакции.
-     */
     @Test
     @Transactional
     void quiz_structure_and_results_persisted() {
@@ -380,7 +347,6 @@ class CoreCrudIT {
 
         Quiz reloadedQuiz = quizRepo.findById(quizId).orElseThrow();
 
-        // ленивые коллекции читаются внутри транзакции без ошибок
         assertThatCode(() -> {
             reloadedQuiz.getQuestions().size();
             reloadedQuiz.getQuizSubmissions().size();

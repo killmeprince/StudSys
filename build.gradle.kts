@@ -28,21 +28,19 @@ configurations {
 }
 
 dependencies {
-    // Spring
+
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.security:spring-security-oauth2-jose") // JwtEncoder/Decoder
+    implementation("org.springframework.security:spring-security-oauth2-jose")
 
-    // DB
     runtimeOnly("com.h2database:h2")
-    runtimeOnly("org.postgresql:postgresql") // в проде/локально, в test-профиле H2
+    runtimeOnly("org.postgresql:postgresql")
 
-    // OpenAPI
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${property("springdocVersion")}")
 
-    // MapStruct + Lombok
+
     implementation("org.mapstruct:mapstruct:${property("mapstructVersion")}")
     annotationProcessor("org.mapstruct:mapstruct-processor:${property("mapstructVersion")}")
     annotationProcessor("org.projectlombok:lombok-mapstruct-binding:0.2.0")
