@@ -1,0 +1,28 @@
+app:
+  jwt:
+    secret: 021bd6aa8342c08a9e581daa567a82e27d4091f177e3be37772532d3658bf488
+    access-ttl: PT15M
+    refresh-ttl: P7D
+
+spring:
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:studsys;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    username: sa
+    password: sa
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+  jackson:
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
